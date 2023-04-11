@@ -1,0 +1,16 @@
+{
+  "files": {
+    "main.css": "/apriori-react/static/css/main.073c9b0a.css",
+    "main.js": "/apriori-react/static/js/main.22b233ef.js",
+    "static/js/787.810fa887.chunk.js": "/apriori-react/static/js/787.810fa887.chunk.js",
+    "static/media/logo.svg": "/apriori-react/static/media/logo.6ce24c58023cc2f8fd88fe9d219db6c6.svg",
+    "index.html": "/apriori-react/index.html",
+    "main.073c9b0a.css.map": "/apriori-react/static/css/main.073c9b0a.css.map",
+    "main.22b233ef.js.map": "/apriori-react/static/js/main.22b233ef.js.map",
+    "787.810fa887.chunk.js.map": "/apriori-react/static/js/787.810fa887.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.073c9b0a.css",
+    "static/js/main.22b233ef.js"
+  ]
+}
