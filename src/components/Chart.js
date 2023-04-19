@@ -1,32 +1,16 @@
 import * as React from "react";
 import { useTheme } from "@mui/material/styles";
 import {
-  LineChart,
-  Line,
+  BarChart,
+  Bar,
   XAxis,
   YAxis,
   Label,
   ResponsiveContainer,
 } from "recharts";
 import Title from "./Title";
-import { Typography } from "@mui/material";
-
-// Generate Data
-// function createData(time, amount) {
-//   return { time, amount };
-// }
-
-// const data = [
-//   createData("00:00", 0),
-//   createData("03:00", 300),
-//   createData("06:00", 600),
-//   createData("09:00", 800),
-//   createData("12:00", 1500),
-//   createData("15:00", 2000),
-//   createData("18:00", 2400),
-//   createData("21:00", 2400),
-//   createData("24:00", undefined),
-// ];
+import { Typography, Box } from "@mui/material";
+import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 
 export default function Chart({ data }) {
   const theme = useTheme();
@@ -34,11 +18,26 @@ export default function Chart({ data }) {
   return (
     <React.Fragment>
       <Title>Graphs</Title>
-      {data.length === 0 ? (
-        <Typography>You need first to run the Apriori algorithm</Typography>
+      {data?.length === 0 ? (
+        <Box alignSelf="center">
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              flexwrap: "wrap",
+              marginTop: 50,
+            }}
+          >
+            <InfoOutlinedIcon color="primary" sx={{ fontSize: 50 }} />
+
+            <Typography margin={2}>
+              You need first to run the Apriori algorithm
+            </Typography>
+          </div>
+        </Box>
       ) : (
         <ResponsiveContainer>
-          <LineChart
+          <BarChart
             data={data}
             margin={{
               top: 16,
@@ -80,14 +79,14 @@ export default function Chart({ data }) {
                 Number of frequent itemsets
               </Label>
             </YAxis>
-            <Line
+            <Bar
               isAnimationActive={false}
               type="monotone"
               dataKey="nbItemset"
-              stroke={theme.palette.primary.main}
+              fill="#1976D2"
               dot={false}
             />
-          </LineChart>
+          </BarChart>
         </ResponsiveContainer>
       )}
     </React.Fragment>

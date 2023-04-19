@@ -9,50 +9,16 @@ import Title from "./Title";
 import Typography from "@mui/material/Typography";
 import IconButton from "@mui/material/IconButton";
 import Grid from "@mui/material/Grid";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
 import RestartAltIcon from "@mui/icons-material/RestartAlt";
-
-// Generate Execution Data
-function createData(id, date, dataName, execTime, nbItemsets) {
-  return { id, date, dataName, execTime, nbItemsets };
-}
-
-const rows = [
-  createData(
-    0,
-    "16 Mar, 2019",
-    "Elvis Presley",
-    "Tupelo, MS",
-    "VISA ⠀•••• 3719"
-  ),
-  createData(
-    1,
-    "16 Mar, 2019",
-    "Paul McCartney",
-    "London, UK",
-    "VISA ⠀•••• 2574"
-  ),
-  createData(2, "16 Mar, 2019", "Tom Scholz", "Boston, MA", "MC ⠀•••• 1253"),
-  createData(
-    3,
-    "16 Mar, 2019",
-    "Michael Jackson",
-    "Gary, IN",
-    "AMEX ⠀•••• 2000"
-  ),
-  createData(
-    4,
-    "15 Mar, 2019",
-    "Bruce Springsteen",
-    "Long Branch, NJ",
-    "VISA ⠀•••• 5919"
-  ),
-];
+import HistoryIcon from "@mui/icons-material/History";
 
 function preventDefault(event) {
   event.preventDefault();
 }
 
-export default function Executions({ data, setHistory }) {
+export default function Executions({ data, setHistory, setExecutionId }) {
   const clearHistory = () => {
     setHistory([]);
   };
@@ -68,8 +34,20 @@ export default function Executions({ data, setHistory }) {
           </IconButton>
         </Grid>
       </Grid>
-      {data.length === 0 ? (
-        <Typography>No execution yet recorded</Typography>
+      {data?.length === 0 ? (
+        <Box alignSelf="center">
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              flexwrap: "wrap",
+            }}
+          >
+            <HistoryIcon color="primary" sx={{ fontSize: 50 }} />
+
+            <Typography margin={2}>No execution yet recorded</Typography>
+          </div>
+        </Box>
       ) : (
         <Table size="small">
           <TableHead>
@@ -78,15 +56,33 @@ export default function Executions({ data, setHistory }) {
               <TableCell>Dataset Name</TableCell>
               <TableCell>Execution Time</TableCell>
               <TableCell>Frequent Itemsets</TableCell>
+              <TableCell>Min Support</TableCell>
+              <TableCell>Action</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {data.map((row) => (
+            {data?.map((row) => (
               <TableRow key={row.id}>
                 <TableCell>{row.date}</TableCell>
-                <TableCell>{row.dataName}</TableCell>
+                <TableCell>{row.settings?.dataName}</TableCell>
                 <TableCell>{row.execTime}</TableCell>
-                <TableCell>{row.nbItemsets}</TableCell>
+                <TableCell>{row.itemsets?.length}</TableCell>
+                <TableCell>
+                  {row.settings?.isInterval
+                    ? `[ ${row.settings?.minSuppInterval[0]} - ${
+                        row.settings?.minSuppInterval[1]
+                      } ]  ${row.settings?.minSupport.toFixed(2)}`
+                    : row.settings?.minSupport}
+                </TableCell>
+                <TableCell>
+                  <Button
+                    onClick={() => {
+                      setExecutionId(row.id);
+                    }}
+                  >
+                    View
+                  </Button>
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>

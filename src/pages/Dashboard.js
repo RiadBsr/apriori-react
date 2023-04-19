@@ -22,6 +22,8 @@ import { mainListItems, secondaryListItems } from "../components/listItems";
 import Chart from "../components/Chart";
 import RunApiori from "../components/runApiori";
 import Executions from "../components/Executions";
+import { Collapse } from "@mui/material";
+import Data from "../components/Data";
 
 function Copyright(props) {
   return (
@@ -90,23 +92,22 @@ const Drawer = styled(MuiDrawer, {
 const mdTheme = createTheme();
 
 function DashboardContent() {
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(false);
   const toggleDrawer = () => {
     setOpen(!open);
   };
 
-  const [history, setHistory] = useState([]);
+  const [executionId, setExecutionId] = useState(0);
+  const [history, setHistory] = useState(() => {
+    return JSON.parse(localStorage.getItem("history")) || [];
+  });
 
   useEffect(() => {
     localStorage.setItem("history", JSON.stringify(history));
   }, [history]);
 
-  useEffect(() => {
-    const history = JSON.parse(localStorage.getItem("history"));
-    if (history) {
-      setHistory(history);
-    }
-  }, []);
+  const [data, setData] = useState([]);
+  const [viewData, setViewData] = useState(false);
 
   return (
     <ThemeProvider theme={mdTheme}>
@@ -139,7 +140,7 @@ function DashboardContent() {
             >
               Apriori Algorithm
             </Typography>
-            <IconButton color="inherit">
+            <IconButton color="inherit" href="https://github.com/RiadBsr">
               <Badge badgeContent={1} color="secondary">
                 <GitHubIcon />
               </Badge>
@@ -182,7 +183,7 @@ function DashboardContent() {
           <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
             <Grid container spacing={3}>
               {/* Run Apriori */}
-              <Grid item xs={12} md={4} lg={3}>
+              <Grid item xs={12} md={4}>
                 <Paper
                   sx={{
                     p: 2,
@@ -191,11 +192,19 @@ function DashboardContent() {
                     height: 300,
                   }}
                 >
-                  <RunApiori history={history} setHistory={setHistory} />
+                  <RunApiori
+                    history={history}
+                    setHistory={setHistory}
+                    setExecutionId={setExecutionId}
+                    viewData={viewData}
+                    setViewData={setViewData}
+                    data={data}
+                    setData={setData}
+                  />
                 </Paper>
               </Grid>
               {/* Chart */}
-              <Grid item xs={12} md={8} lg={9}>
+              <Grid item xs={12} md={8}>
                 <Paper
                   sx={{
                     p: 2,
@@ -204,13 +213,48 @@ function DashboardContent() {
                     height: 300,
                   }}
                 >
-                  <Chart data={history} />
+                  <Chart
+                    data={
+                      history.length === 0
+                        ? []
+                        : history[executionId].progressData?.iteration.map(
+                            (iteration, index) => {
+                              return {
+                                iteration: iteration,
+                                nbItemset:
+                                  history[executionId].progressData?.nbItemset[
+                                    index
+                                  ],
+                              };
+                            }
+                          )
+                    }
+                  />
                 </Paper>
+              </Grid>
+              {/* Show Data*/}
+              <Grid item xs={12}>
+                <Collapse in={viewData}>
+                  <Paper
+                    sx={{
+                      p: 2,
+                      display: "flex",
+                      flexDirection: "column",
+                      height: 300,
+                    }}
+                  >
+                    <Data data={data} />
+                  </Paper>
+                </Collapse>
               </Grid>
               {/* Recent Executions */}
               <Grid item xs={12}>
                 <Paper sx={{ p: 2, display: "flex", flexDirection: "column" }}>
-                  <Executions data={history} setHistory={setHistory} />
+                  <Executions
+                    data={history}
+                    setHistory={setHistory}
+                    setExecutionId={setExecutionId}
+                  />
                 </Paper>
               </Grid>
             </Grid>

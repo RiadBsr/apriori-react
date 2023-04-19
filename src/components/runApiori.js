@@ -1,6 +1,5 @@
 import * as React from "react";
-import { useState } from "react";
-import Link from "@mui/material/Link";
+import { useState, useEffect } from "react";
 import { styled } from "@mui/material/styles";
 import Box from "@mui/material/Box";
 import Grid from "@mui/material/Grid";
@@ -12,25 +11,36 @@ import FormGroup from "@mui/material/FormGroup";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import Switch from "@mui/material/Switch";
 import Button from "@mui/material/Button";
+import LoadingButton from "@mui/lab/LoadingButton";
 import Papa from "papaparse";
 import IconButton from "@mui/material/IconButton";
 import ClearIcon from "@mui/icons-material/Clear";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
 import RocketLaunchIcon from "@mui/icons-material/RocketLaunch";
 import Apriori from "../Functions/Apriori";
+import Paper from "@mui/material/Paper";
 
-function preventDefault(event) {
-  event.preventDefault();
-}
+// function preventDefault(event) {
+//   event.preventDefault();
+// }
 const Input = styled(MuiInput)`
   width: 47px;
 `;
-export default function RunApiori({ history, setHistory }) {
+export default function RunApiori({
+  history,
+  setHistory,
+  setExecutionId,
+  viewData,
+  setViewData,
+  data,
+  setData,
+}) {
+  const [loading, setLoading] = useState(false);
   const [isInterval, setIsInterval] = useState(false);
   const handleSwitchChange = (event) => {
     setIsInterval(!isInterval);
   };
-  const [minSupport, setMinSupport] = useState(0.2);
+  const [minSupport, setMinSupport] = useState(0.02);
   const handleSliderChange = (event, newValue) => {
     setMinSupport(newValue);
   };
@@ -48,32 +58,134 @@ export default function RunApiori({ history, setHistory }) {
   const handleIntervalChange = (event, newValue) => {
     setMinSuppInterval(newValue);
   };
-  const [data, setData] = useState([]);
   const [dataName, setDataName] = useState("");
   const handleUpload = (event) => {
     Papa.parse(event.target.files[0], {
-      header: true,
       skipEmptyLines: true,
       complete: function (results) {
         setData(results?.data);
+        console.log(results.data);
       },
     });
     setDataName(event.target.files[0]?.name);
+    setViewData(true);
   };
   const clearFile = () => {
     setDataName("");
     setData([]);
+    setViewData(false);
   };
 
-  const runAlgorithm = () => {
-    const settings = {
-      isInterval,
-      minSupport,
-      minSuppInterval,
-      dataName,
-    };
-    Apriori(data, settings, history, setHistory);
-  };
+  function linspace(start, stop, num) {
+    const step = (stop - start) / (num - 1);
+    return Array(num)
+      .fill()
+      .map((_, i) => start + i * step);
+  }
+  async function runAlgorithm() {
+    setLoading(true);
+
+    if (isInterval) {
+      let executions = [];
+      let id = history.length === 0 ? 0 : history[history.length - 1].id + 1;
+      for (let minSupp of linspace(
+        minSuppInterval[0],
+        minSuppInterval[1],
+        10
+      )) {
+        let settings = {
+          isInterval,
+          minSupport: minSupp,
+          minSuppInterval,
+          dataName,
+        };
+        let start = Date.now();
+        let startDate = new Date(start);
+        let { progress, frequentItems, frequentItemCounts } = await Apriori(
+          data,
+          minSupp
+        );
+        let end = Date.now();
+        let execId = id;
+        id = id + 1;
+        executions.push({
+          id: execId,
+          date:
+            startDate.getDate() +
+            "/" +
+            (startDate.getMonth() + 1) +
+            "/" +
+            startDate.getFullYear() +
+            " @ " +
+            startDate.getHours() +
+            ":" +
+            startDate.getMinutes() +
+            ":" +
+            startDate.getSeconds(),
+          execTime: `${end - start} ms`,
+          itemsets: frequentItems,
+          settings: settings,
+          progressData: {
+            iteration: progress,
+            nbItemset: frequentItemCounts,
+          },
+        });
+      }
+      setHistory([...history, ...executions]);
+      const execId =
+        history.length === 0 ? 0 : history[history.length - 1].id + 1;
+      setExecutionId(execId);
+    } else {
+      let settings = {
+        isInterval,
+        minSupport,
+        minSuppInterval,
+        dataName,
+      };
+      const start = Date.now();
+      const startDate = new Date(start);
+
+      const { progress, frequentItems, frequentItemCounts } = await Apriori(
+        data,
+        settings.minSupport
+      );
+      const end = Date.now();
+      const execId =
+        history.length === 0 ? 0 : history[history.length - 1].id + 1;
+      setHistory([
+        ...history,
+        {
+          id: execId,
+          date:
+            startDate.getDate() +
+            "/" +
+            (startDate.getMonth() + 1) +
+            "/" +
+            startDate.getFullYear() +
+            " @ " +
+            startDate.getHours() +
+            ":" +
+            startDate.getMinutes() +
+            ":" +
+            startDate.getSeconds(),
+          execTime: `${end - start} ms`,
+          itemsets: frequentItems,
+          settings: settings,
+          progressData: {
+            iteration: progress,
+            nbItemset: frequentItemCounts,
+          },
+        },
+      ]);
+      setExecutionId(execId);
+    }
+
+    setLoading(false);
+  }
+
+  useEffect(() => {
+    console.log(history);
+  }, [history]);
 
   return (
     <React.Fragment>
@@ -102,7 +214,7 @@ export default function RunApiori({ history, setHistory }) {
           />
         </Box>
       ) : (
-        <Box sx={{ width: 230 }}>
+        <Box>
           <Typography id="input-slider" gutterBottom>
             Min Support
           </Typography>
@@ -145,31 +257,45 @@ export default function RunApiori({ history, setHistory }) {
           <input type="file" accept=".csv" onChange={handleUpload} hidden />
         </Button>
       ) : (
-        <Grid container spacing={2} alignItems="center">
-          <Grid item xs>
-            <Typography>{dataName}</Typography>
+        <Paper elevation={5}>
+          <Grid marginLeft={2} container alignItems="center">
+            <Grid item width={"75%"} zeroMinWidth>
+              <Typography noWrap>{dataName}</Typography>
+            </Grid>
+            <Grid item>
+              <IconButton color="inherit" onClick={clearFile}>
+                <ClearIcon />
+              </IconButton>
+            </Grid>
           </Grid>
-          <Grid item>
-            <IconButton color="inherit" onClick={clearFile}>
-              <ClearIcon />
-            </IconButton>
-          </Grid>
-        </Grid>
+        </Paper>
       )}
-      <Box marginTop={1} alignSelf="center">
-        <Button
+      <Box marginTop={2} alignSelf="center">
+        <LoadingButton
           variant="contained"
           startIcon={<RocketLaunchIcon />}
           disabled={data.length === 0}
           onClick={runAlgorithm}
+          loading={loading}
         >
           Run Apriori
-        </Button>
+        </LoadingButton>
       </Box>
       <Box margin={1}>
-        <Link color="primary" href="#" onClick={preventDefault}>
-          View data
-        </Link>
+        {viewData ? (
+          <Button color="primary" onClick={() => setViewData(false)}>
+            Hide data
+          </Button>
+        ) : (
+          <Button
+            color="primary"
+            href="#"
+            onClick={() => setViewData(true)}
+            disabled={data.length === 0}
+          >
+            Show data
+          </Button>
+        )}
       </Box>
     </React.Fragment>
   );
