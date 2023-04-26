@@ -1,10 +1,10 @@
 {
   "files": {
-    "main.js": "/apriori-react/static/js/main.853f8cb5.js",
+    "main.js": "/apriori-react/static/js/main.22382d93.js",
     "index.html": "/apriori-react/index.html",
-    "main.853f8cb5.js.map": "/apriori-react/static/js/main.853f8cb5.js.map"
+    "main.22382d93.js.map": "/apriori-react/static/js/main.22382d93.js.map"
   },
   "entrypoints": [
-    "static/js/main.853f8cb5.js"
+    "static/js/main.22382d93.js"
   ]
 }
