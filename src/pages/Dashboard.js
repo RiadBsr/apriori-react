@@ -24,6 +24,7 @@ import RunApiori from "../components/runApiori";
 import Executions from "../components/Executions";
 import { Collapse } from "@mui/material";
 import Data from "../components/Data";
+import Rules from "../components/Rules";
 
 function Copyright(props) {
   return (
@@ -108,6 +109,13 @@ function DashboardContent() {
 
   const [data, setData] = useState([]);
   const [viewData, setViewData] = useState(false);
+  const [openCollapse, setOpenCollapse] = useState(false);
+
+  useEffect(() => {
+    if (!viewData) setTimeout(() => setOpenCollapse(false), 130);
+  }, [viewData]);
+
+  const [associationRules, setAssociationRules] = useState([]);
 
   return (
     <ThemeProvider theme={mdTheme}>
@@ -189,7 +197,7 @@ function DashboardContent() {
                     p: 2,
                     display: "flex",
                     flexDirection: "column",
-                    height: 300,
+                    height: 400,
                   }}
                 >
                   <RunApiori
@@ -200,6 +208,8 @@ function DashboardContent() {
                     setViewData={setViewData}
                     data={data}
                     setData={setData}
+                    setOpenCollapse={setOpenCollapse}
+                    setAssociationRules={setAssociationRules}
                   />
                 </Paper>
               </Grid>
@@ -210,7 +220,7 @@ function DashboardContent() {
                     p: 2,
                     display: "flex",
                     flexDirection: "column",
-                    height: 300,
+                    height: 400,
                   }}
                 >
                   <Chart
@@ -232,15 +242,30 @@ function DashboardContent() {
                   />
                 </Paper>
               </Grid>
-              {/* Show Data*/}
-              <Grid item xs={12}>
+              {/* Association Rules */}
+              <Grid item xs={12} hidden={associationRules.length === 0}>
+                <Collapse in={associationRules.length !== 0}>
+                  <Paper
+                    sx={{
+                      p: 2,
+                      display: "flex",
+                      flexDirection: "column",
+                      height: 400,
+                    }}
+                  >
+                    <Rules rules={associationRules} />
+                  </Paper>
+                </Collapse>
+              </Grid>
+              {/* Show Data */}
+              <Grid item xs={12} hidden={!openCollapse}>
                 <Collapse in={viewData}>
                   <Paper
                     sx={{
                       p: 2,
                       display: "flex",
                       flexDirection: "column",
-                      height: 300,
+                      height: 400,
                     }}
                   >
                     <Data data={data} />
@@ -254,6 +279,7 @@ function DashboardContent() {
                     data={history}
                     setHistory={setHistory}
                     setExecutionId={setExecutionId}
+                    setAssociationRules={setAssociationRules}
                   />
                 </Paper>
               </Grid>

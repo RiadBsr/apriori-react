@@ -32,7 +32,7 @@ function Data({ data }) {
         {data.slice(0, 10).map((item, index) => (
           <ListItem key={`item-${index}-${item}`}>
             <ListItemText
-              primary={`Transaction[${index}]`}
+              primary={`Transaction ${index + 1}`}
               secondary={
                 <Typography
                   sx={{ display: "inline" }}

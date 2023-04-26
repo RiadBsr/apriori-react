@@ -34,6 +34,8 @@ export default function RunApiori({
   setViewData,
   data,
   setData,
+  setOpenCollapse,
+  setAssociationRules,
 }) {
   const [loading, setLoading] = useState(false);
   const [isInterval, setIsInterval] = useState(false);
@@ -58,16 +60,31 @@ export default function RunApiori({
   const handleIntervalChange = (event, newValue) => {
     setMinSuppInterval(newValue);
   };
+
+  const [confidence, setConfidence] = useState(0.2);
+
   const [dataName, setDataName] = useState("");
+  const [withHeader, setWithHeader] = useState(false);
   const handleUpload = (event) => {
     Papa.parse(event.target.files[0], {
       skipEmptyLines: true,
       complete: function (results) {
-        setData(results?.data);
-        console.log(results.data);
+        const data = results?.data;
+        if (withHeader) {
+          const header = data.shift();
+          const formattedData = data.map((row) =>
+            row.map((value, index) => `${header[index]}: ${value}`)
+          );
+          setData(formattedData);
+          console.log(formattedData);
+        } else {
+          setData(data);
+          console.log(data);
+        }
       },
     });
     setDataName(event.target.files[0]?.name);
+    setOpenCollapse(true);
     setViewData(true);
   };
   const clearFile = () => {
@@ -97,14 +114,13 @@ export default function RunApiori({
           isInterval,
           minSupport: minSupp,
           minSuppInterval,
+          confidence,
           dataName,
         };
         let start = Date.now();
         let startDate = new Date(start);
-        let { progress, frequentItems, frequentItemCounts } = await Apriori(
-          data,
-          minSupp
-        );
+        let { progress, frequentItems, frequentItemCounts, associationRules } =
+          await Apriori(data, minSupp);
         let end = Date.now();
         let execId = id;
         id = id + 1;
@@ -124,12 +140,14 @@ export default function RunApiori({
             startDate.getSeconds(),
           execTime: `${end - start} ms`,
           itemsets: frequentItems,
+          associationRules,
           settings: settings,
           progressData: {
             iteration: progress,
             nbItemset: frequentItemCounts,
           },
         });
+        setAssociationRules(associationRules);
       }
       setHistory([...history, ...executions]);
       const execId =
@@ -145,10 +163,8 @@ export default function RunApiori({
       const start = Date.now();
       const startDate = new Date(start);
 
-      const { progress, frequentItems, frequentItemCounts } = await Apriori(
-        data,
-        settings.minSupport
-      );
+      const { progress, frequentItems, frequentItemCounts, associationRules } =
+        await Apriori(data, settings.minSupport);
       const end = Date.now();
       const execId =
         history.length === 0 ? 0 : history[history.length - 1].id + 1;
@@ -170,6 +186,7 @@ export default function RunApiori({
             startDate.getSeconds(),
           execTime: `${end - start} ms`,
           itemsets: frequentItems,
+          associationRules,
           settings: settings,
           progressData: {
             iteration: progress,
@@ -178,6 +195,7 @@ export default function RunApiori({
         },
       ]);
       setExecutionId(execId);
+      setAssociationRules(associationRules);
     }
 
     setLoading(false);
@@ -190,14 +208,7 @@ export default function RunApiori({
   return (
     <React.Fragment>
       <Title>Apriori Settings</Title>
-      <FormGroup>
-        <FormControlLabel
-          control={
-            <Switch checked={isInterval} onChange={handleSwitchChange} />
-          }
-          label="Interval"
-        />
-      </FormGroup>
+
       {isInterval ? (
         <Box>
           <Typography id="input-slider" gutterBottom>
@@ -247,29 +258,94 @@ export default function RunApiori({
           </Grid>
         </Box>
       )}
-      {data.length === 0 ? (
-        <Button
-          variant="outlined"
-          component="label"
-          startIcon={<UploadFileIcon />}
-        >
-          Upload Data
-          <input type="file" accept=".csv" onChange={handleUpload} hidden />
-        </Button>
-      ) : (
-        <Paper elevation={5}>
-          <Grid marginLeft={2} container alignItems="center">
-            <Grid item width={"75%"} zeroMinWidth>
-              <Typography noWrap>{dataName}</Typography>
-            </Grid>
-            <Grid item>
-              <IconButton color="inherit" onClick={clearFile}>
-                <ClearIcon />
-              </IconButton>
-            </Grid>
+      <Box>
+        <Typography id="input-slider" gutterBottom>
+          Confidence
+        </Typography>
+        <Grid container spacing={2} alignItems="center">
+          <Grid item xs>
+            <Slider
+              value={typeof confidence === "number" ? confidence : 0}
+              onChange={(event, newValue) => {
+                setConfidence(newValue);
+              }}
+              min={0}
+              max={1}
+              step={0.01}
+              aria-labelledby="input-slider"
+            />
           </Grid>
-        </Paper>
-      )}
+          <Grid item>
+            <Input
+              value={confidence}
+              size="small"
+              onChange={(event) => {
+                setConfidence(
+                  event.target.value === "" ? "" : Number(event.target.value)
+                );
+              }}
+              onBlur={handleBlur}
+              inputProps={{
+                step: 0.01,
+                min: 0,
+                max: 1,
+                type: "number",
+                "aria-labelledby": "input-slider",
+              }}
+            />
+          </Grid>
+        </Grid>
+      </Box>
+      <FormGroup>
+        <Grid container>
+          <Grid item xs={5}>
+            <FormControlLabel
+              control={
+                <Switch checked={isInterval} onChange={handleSwitchChange} />
+              }
+              label="Range"
+            />
+          </Grid>
+          <Grid item xs={7}>
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={withHeader}
+                  onChange={() => setWithHeader(!withHeader)}
+                />
+              }
+              label="Data with header"
+            />
+          </Grid>
+        </Grid>
+      </FormGroup>
+      <Box marginTop={2} alignSelf="center">
+        {data.length === 0 ? (
+          <Button
+            variant="outlined"
+            component="label"
+            startIcon={<UploadFileIcon />}
+          >
+            Upload Data
+            <input type="file" accept=".csv" onChange={handleUpload} hidden />
+          </Button>
+        ) : (
+          <Paper elevation={5}>
+            <Grid container alignItems="center" justifyContent="space-between">
+              <Grid item zeroMinWidth>
+                <Typography noWrap marginLeft={2}>
+                  {dataName}
+                </Typography>
+              </Grid>
+              <Grid item style={{ textAlign: "right" }}>
+                <IconButton color="inherit" onClick={clearFile}>
+                  <ClearIcon />
+                </IconButton>
+              </Grid>
+            </Grid>
+          </Paper>
+        )}
+      </Box>
       <Box marginTop={2} alignSelf="center">
         <LoadingButton
           variant="contained"
@@ -290,7 +366,10 @@ export default function RunApiori({
           <Button
             color="primary"
             href="#"
-            onClick={() => setViewData(true)}
+            onClick={() => {
+              setOpenCollapse(true);
+              setViewData(true);
+            }}
             disabled={data.length === 0}
           >
             Show data

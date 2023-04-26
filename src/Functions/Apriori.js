@@ -1,4 +1,4 @@
-const Apriori = (transactions, minSupport) => {
+const Apriori = (transactions, minSupport, confidence) => {
   return new Promise((resolve, reject) => {
     try {
       // console.log("Transations:", transactions);
@@ -66,7 +66,18 @@ const Apriori = (transactions, minSupport) => {
         k++;
       }
 
-      resolve({ progress, frequentItems, frequentItemCounts });
+      const associationRules = generateAssociationRules(
+        frequentItems,
+        confidence,
+        transactions
+      );
+
+      resolve({
+        progress,
+        frequentItems,
+        frequentItemCounts,
+        associationRules,
+      });
     } catch (e) {
       console.log(e);
       reject(e);
@@ -135,6 +146,72 @@ function countItems(transactions, itemsets) {
     }
   }
   return itemCounts;
+}
+
+function generateAssociationRules(
+  mostFrequentItemsets,
+  confidence,
+  transactions
+) {
+  const associationRules = [];
+
+  for (let i = 0; i < mostFrequentItemsets.length; i++) {
+    const itemset = mostFrequentItemsets[i].split(",");
+
+    // Generate all possible non-empty subsets of the itemset
+    for (let j = 1; j < Math.pow(2, itemset.length) - 1; j++) {
+      const antecedent = [];
+      const consequent = [];
+
+      // Partition the items into antecedent and consequent based on the binary representation of j
+      for (let k = 0; k < itemset.length; k++) {
+        if ((j >> k) & 1) {
+          antecedent.push(itemset[k]);
+        } else {
+          consequent.push(itemset[k]);
+        }
+      }
+
+      // Calculate the support and confidence of the rule
+      const support = getSupport(itemset, transactions);
+      const antecedentSupport = getSupport(antecedent, transactions);
+      const confidenceValue = support / antecedentSupport;
+
+      // If the confidence is greater than or equal to the threshold, add the rule to the list
+      if (confidenceValue >= confidence) {
+        associationRules.push({
+          antecedent: antecedent,
+          consequent: consequent,
+          support: support,
+          confidence: confidenceValue,
+        });
+      }
+    }
+  }
+
+  return associationRules;
+}
+
+function getSupport(itemset, transactions) {
+  let count = 0;
+
+  for (let i = 0; i < transactions.length; i++) {
+    const transaction = transactions[i];
+    let found = true;
+
+    for (let j = 0; j < itemset.length; j++) {
+      if (!transaction.includes(itemset[j])) {
+        found = false;
+        break;
+      }
+    }
+
+    if (found) {
+      count++;
+    }
+  }
+
+  return count / transactions.length;
 }
 
 export default Apriori;

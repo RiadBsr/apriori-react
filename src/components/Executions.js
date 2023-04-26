@@ -13,12 +13,18 @@ import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import RestartAltIcon from "@mui/icons-material/RestartAlt";
 import HistoryIcon from "@mui/icons-material/History";
+import Tooltip from "@mui/material/Tooltip";
 
 function preventDefault(event) {
   event.preventDefault();
 }
 
-export default function Executions({ data, setHistory, setExecutionId }) {
+export default function Executions({
+  data,
+  setHistory,
+  setExecutionId,
+  setAssociationRules,
+}) {
   const clearHistory = () => {
     setHistory([]);
   };
@@ -29,9 +35,11 @@ export default function Executions({ data, setHistory, setExecutionId }) {
           <Title>Recent Executions</Title>
         </Grid>
         <Grid item>
-          <IconButton color="inherit" onClick={clearHistory}>
-            <RestartAltIcon />
-          </IconButton>
+          <Tooltip title="Clear History" placement="left">
+            <IconButton color="inherit" onClick={clearHistory}>
+              <RestartAltIcon />
+            </IconButton>
+          </Tooltip>
         </Grid>
       </Grid>
       {data?.length === 0 ? (
@@ -78,6 +86,7 @@ export default function Executions({ data, setHistory, setExecutionId }) {
                   <Button
                     onClick={() => {
                       setExecutionId(row.id);
+                      setAssociationRules(row.associationRules);
                     }}
                   >
                     View
